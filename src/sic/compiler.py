@@ -98,11 +98,13 @@ class Context:
     info_map: dict[NodeId, parser.Info]
     port_map: dict[PortName, tuple[list[tuple[sic.Port | PortName, parser.Pos]], parser.Pos]]
     wires: set[Wire]
+    net: sic.Net
 
     def __init__(
         self,
         src: str,
         filename: str = "<input>",
+        net: sic.Net | None = None,
         ctx: Context | None = None
     ):
         if ctx is not None:
@@ -117,20 +119,46 @@ class Context:
                            parser.no_label)}
             self.port_map = {"main": ([(sic.Port.top(0), parser.no_pos)], parser.no_pos)}
             self.wires = set()
+        if net is None:
+            net = sic.Net()
+        self.net = net
         self.src = src
         self.filename = filename
 
     def add_wire(self, p1: sic.Port, p2: sic.Port):
         wire = cast(Wire, tuple(sorted((p1, p2))))
+        if wire not in self.wires:
+            self.net.connect(p1, p2)
         self.wires.add(wire)
 
 class Sema(CompilerPass):
+    def alloc_node(self, info: parser.Info) -> NodeId:
+        label = info.label.token.value
+        if label not in self.ctx.label_map:
+            label_id = len(self.ctx.label_map)
+            self.ctx.label_map[label] = label_id
+        sic_label = self.ctx.label_map[label]
+        tag = info.tag.token.value
+        if tag == "φ":
+            sic_tag = sic.PHI
+        elif tag == "ε":
+            sic_tag = sic.EPS
+        elif tag == "δ":
+            sic_tag = sic.DLT
+        elif tag == "γ":
+            sic_tag = sic.GAM
+        else:
+            return self.error(f"Unknown tag: {tag!r}", info.tag.pos())
+        sic_info = sic.Info(sic_tag, sic_label)
+        return self.ctx.net.alloc(sic_info)
+
+
     def visit_label(self, label: parser.Label):
         if label != parser.no_label:
             key = label.token.value
             if key not in self.ctx.label_map:
-                node_id = len(self.ctx.label_map)
-                self.ctx.label_map[key] = node_id
+                label_id = len(self.ctx.label_map)
+                self.ctx.label_map[key] = label_id
         super().visit_label(label)
 
     def visit_port(self, port: parser.Port, node_id: NodeId = 0, port_id: PortId = 0):
@@ -150,11 +178,11 @@ class Sema(CompilerPass):
 
     def visit_node(self, node: parser.Node, node_id: NodeId = 0, port_id: PortId = 0) -> NodeId:
         info = node.info
-        new_id = len(self.ctx.info_map)
+        self.visit_info(info)
+        new_id = self.alloc_node(info)
+        self.ctx.info_map[new_id] = info
         if port_id != 0:
             self.ctx.add_wire(sic.Port.top(new_id), sic.Port(node_id, port_id))
-        self.ctx.info_map[new_id] = info
-        self.visit_info(info)
         if node.aux is not None:
             self.visit_aux(node.aux, node_id=new_id)
         return new_id
@@ -240,9 +268,15 @@ class Sema(CompilerPass):
 
 @dataclass
 class Compiler:
-    def __init__(self, src: str, filename: str = "<input>", ctx: Context | None = None):
+    def __init__(
+        self,
+        src: str,
+        filename: str = "<input>",
+        ctx: Context | None = None,
+        net: sic.Net | None = None,
+    ):
         if ctx is None:
-            ctx = Context(src=src, filename=filename)
+            ctx = Context(src=src, filename=filename, net=net)
         self.ctx = ctx
         self.parser = parser.Parser(src=src, filename=filename)
         self.passes = [
@@ -255,6 +289,8 @@ class Compiler:
             for ast in asts:
                 p.visit_ast(ast)
             p.finalize()
+        wires = self.ctx.wires
+        infos = self.ctx.info_map
 
 @test
 def test_compile():
