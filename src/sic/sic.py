@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import cast
 from typing import Self
 from .utils import *
+from . import compiler
 
 type Arity = bool
 AR0 = False
@@ -208,6 +209,28 @@ class Net:
         other_cast: Self = cast(Self, other)
         eq, err = self.compare(other_cast)
         return eq
+
+def enumerate_binary_redexes(l: str, r: str) -> list[tuple[Net, tuple[Port, Port]]]:
+    common = f"{l}(a b) = {r}(c d)"
+    case_0 = common + "a = ε   b = ε   c = ε   d = ε"
+    case_1 = common + "a = b           c = ε   d = ε"
+    case_2 = common + "a = ε   b = ε   c = d        "
+    case_3 = common + "a = b           c = d        "
+    case_4 = common + "a = d   b = ε   c = ε        "
+    case_5 = common + "a = ε   b = c           d = ε"
+    case_6 = common + "a = d   b = c                "
+    case_7 = common + "a = c   b = ε           d = ε"
+    case_8 = common + "a = ε   b = d   c = ε        "
+    case_9 = common + "a = c   b = d                "
+    cases = [case_0, case_1, case_2, case_3, case_4, case_5, case_6, case_7, case_8, case_9]
+    redexes = []
+    for i, src in enumerate(cases):
+        print(f"case {i}: {src}")
+        comp = compiler.Compiler(src=src)
+        net = comp.compile()
+        redex = (Port.top(1), Port.top(2))
+        redexes.append((net, redex))
+    return redexes
 
 @test
 def test_net_annihilation():
