@@ -112,6 +112,7 @@ class Context:
             self.info_map = copy(ctx.info_map)
             self.port_map = copy(ctx.port_map)
             self.wires = copy(ctx.wires)
+            net = ctx.net
         else:
             self.label_map = {"": 0}
             self.info_map = {
