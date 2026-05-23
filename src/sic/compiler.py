@@ -283,14 +283,13 @@ class Compiler:
             Sema(ctx),
         ]
 
-    def compile(self):
+    def compile(self) -> sic.Net:
         asts = self.parser.parse()
         for p in self.passes:
             for ast in asts:
                 p.visit_ast(ast)
             p.finalize()
-        wires = self.ctx.wires
-        infos = self.ctx.info_map
+        return self.ctx.net
 
 @test
 def test_compile():
