@@ -2,9 +2,10 @@ from io import StringIO
 from pprint import pformat
 from functools import wraps
 from functools import partial
+import inspect
 import textwrap as tw
 
-pf = partial(pformat, compact=True, width=80, sort_dicts=True)
+pf = partial(pformat, compact=True, width=1, sort_dicts=True)
 
 _print = print
 INDENT_LEVEL = 0
@@ -40,17 +41,20 @@ def debug(f=None, *, repr_arg=None):
         return lambda f: debug(f, repr_arg=repr_arg)
     @wraps(f)
     def wrapper(*args, **kwargs):
-        args_repr = [debug_arg(a, repr_arg) for a in args]
-        kwargs_repr = [f"{k}={debug_arg(v, repr_arg)}" for k, v in kwargs.items()]
+        sig = inspect.signature(f)
+        bound = sig.bind(*args, **kwargs)
+        args_repr = [f"{k}={debug_arg(v, repr_arg)}" for k, v in bound.arguments.items()]
         print(f"{f.__name__}(")
         indent()
-        print(*(args_repr + kwargs_repr), sep=",\n", end=",\n")
+        print(*args_repr, sep=",\n", end=",\n")
         dedent()
         print("):")
         indent()
         result = f(*args, **kwargs)
         dedent()
         print(f"-> {result!r}")
+        if "self" in sig.parameters:
+            print("self=", debug_arg(bound.arguments["self"], repr_arg), sep="")
         return result
     return wrapper
 
