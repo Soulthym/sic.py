@@ -191,7 +191,16 @@ class Net:
     def connect(self, a: Port, b: Port):
         self.set_port(a, b)
         self.set_port(b, a)
-    def annihilate(self, a: Port, b: Port):
+    def io(self, a: Port, b: Port):
+        raise NotImplementedError("not implemented yet")
+    def annihilate_nil(self, a: Port, b: Port):
+        info_a = self.get_info(a)
+        info_b = self.get_info(b)
+        if info_a.tag == PHI or info_b.tag == PHI:
+            self.io(a, b)
+        self.free(a.node_id)
+        self.free(b.node_id)
+    def annihilate_bin(self, a: Port, b: Port):
         raise NotImplementedError("not implemented yet")
     def distribute(self, a: Port, b: Port):
         raise NotImplementedError("not implemented yet")
