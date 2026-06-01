@@ -210,27 +210,71 @@ class Net:
         eq, err = self.compare(other_cast)
         return eq
 
-def enumerate_binary_redexes(l: str, r: str) -> list[tuple[Net, tuple[Port, Port]]]:
-    common = f"{l}(a b) = {r}(c d)"
-    case_0 = common + "a = ε   b = ε   c = ε   d = ε"
-    case_1 = common + "a = b           c = ε   d = ε"
-    case_2 = common + "a = ε   b = ε   c = d        "
-    case_3 = common + "a = b           c = d        "
-    case_4 = common + "a = d   b = ε   c = ε        "
-    case_5 = common + "a = ε   b = c           d = ε"
-    case_6 = common + "a = d   b = c                "
-    case_7 = common + "a = c   b = ε           d = ε"
-    case_8 = common + "a = ε   b = d   c = ε        "
-    case_9 = common + "a = c   b = d                "
-    cases = [case_0, case_1, case_2, case_3, case_4, case_5, case_6, case_7, case_8, case_9]
+def all_binary_ports() -> list[str]:
+    return list(map(
+        str.strip,
+        map(partial(re.sub, r"  +", "\n"), [
+            "a = εA   b = εB   c = εC   d = εD",
+            "a = b             c = εC   d = εD",
+            "a = εA   b = εB   c = d          ",
+            "a = b             c = d          ",
+            "a = d    b = εB   c = εC         ",
+            "a = εA   b = c             d = εD",
+            "a = d    b = c                   ",
+            "a = c    b = εB            d = εD",
+            "a = εA   b = d    c = εC         ",
+            "a = c    b = d                   ",
+        ])))
+
+def all_binary_redexes(l: str, r: str) -> list[tuple[str, Net, tuple[Port, Port]]]:
+    common = f"{l}(b a) = {r}(c d)"
+    cases_ports = all_binary_ports()
+    cases = [common + "\n" + p for p in cases_ports]
     redexes = []
     for i, src in enumerate(cases):
-        print(f"case {i}: {src}")
         comp = compiler.Compiler(src=src)
         net = comp.compile()
         redex = (Port.top(1), Port.top(2))
-        redexes.append((net, redex))
+        redexes.append((src, net, redex))
     return redexes
+
+def all_binary_annihilation() -> list[tuple[str, Net, tuple[Port, Port]]]:
+    cases_common = "a = d    b = c"
+    cases_ports  = all_binary_ports()
+    cases = [cases_common + "\n" + p for p in cases_ports]
+    redexes = []
+    for i, src in enumerate(cases):
+        comp = compiler.Compiler(src=src)
+        net = comp.compile()
+        redex = (Port.top(1), Port.top(2))
+        redexes.append((src, net, redex))
+    return redexes
+
+# @test
+def test_enumeration():
+    print(f"Annihilation redexes:")
+    redexes = all_binary_redexes("γ", "γ")
+    redexes_annihilation = all_binary_annihilation()
+    indent()
+    for i, (
+        (    src,     net,     redex),
+        (exp_src, exp_net, exp_redex)) in enumerate(zip(
+            redexes, redexes_annihilation
+    )):
+        print(f"case {i}:")
+        indent()
+        print(f"input:")
+        indent()
+        print(f"{src}\nnet = {pf(net)}\n{redex = !r}")
+        dedent()
+        print(f"expected:")
+        indent()
+        print(f"{exp_src}\nnet = {pf(exp_net)}\n{exp_redex = !r}\n")
+        dedent()
+        dedent()
+        raise TypeError("not implemented yet")
+    dedent()
+    print("Done.")
 
 @test
 def test_net_annihilation():
