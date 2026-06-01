@@ -289,5 +289,5 @@ def test_net_commutation():
     raise NotImplementedError("not implemented yet")
 
 if __name__ == "__main__":
-    run_tests()
+    run_tests(skip_not_implemented=False)
     print("Done.")

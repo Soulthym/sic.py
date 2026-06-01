@@ -77,7 +77,7 @@ def test(f):
     _tests.append(f)
     return f
 
-def run_tests():
+def run_tests(skip_not_implemented=True):
     for f in _tests:
         name = f.__name__
         print(f"Running: {name}...")
@@ -85,6 +85,8 @@ def run_tests():
             f()
             print("ok")
         except NotImplementedError as e:
+            if not skip_not_implemented:
+                raise e
             print(f"skipped: {e!r}")
             # exit(1)
         except Exception as e:
