@@ -1,7 +1,9 @@
-from pprint import pformat as pf
 from dataclasses import dataclass
+from functools import partial
+from pprint import pformat as pf
 from typing import cast
 from typing import Self
+import re
 from .utils import *
 from . import compiler
 
@@ -52,8 +54,19 @@ class Info:
     @classmethod
     def gam(cls, label: Label = 0) -> Self:
         return cls(GAM, label)
+    def show(
+        self,
+        label_map: dict[compiler.LabelId, compiler.LabelName],
+    ) -> str:
+        if label_map is not None:
+            label = label_map.get(self.label, f"L{self.label}")
+        elif self.label:
+            label = f"{self.label}"
+        else:
+            label = ""
+        return f"{self.tag}{label}"
     def __repr__(self) -> str:
-        return f"{self.tag}{self.label or ''}"
+        return self.show(label_map={})
 
 type NodeId = int
 type PortId = int
@@ -113,11 +126,16 @@ class Node:
             self.lhs = p
         elif port_id == 3:
             self.rhs = p
-    def __repr__(self) -> str:
+    def show(
+        self,
+        label_map: dict[compiler.LabelId, compiler.LabelName],
+    ) -> str:
         aux = ""
         if self.info.tag.arity == AR2:
             aux = f" {self.lhs} {self.rhs}"
-        return f"{self.info}({self.top}{aux})"
+        return f"{self.info.show(label_map=label_map)}({self.top}{aux})"
+    def __repr__(self) -> str:
+        return self.show(label_map={})
 
 @dataclass(init=False)
 class Net:
@@ -126,6 +144,20 @@ class Net:
     def __init__(self):
         self.nodes = [Node.phi(0)] # root node
         self.free_id = 0
+    def show(
+        self,
+        label_map: dict[compiler.LabelId, compiler.LabelName],
+    ) -> str:
+        repr_node = partial(Node.show, label_map=label_map)
+        free_id = f"free_id={self.free_id}"
+        nodes = ("nodes=[\n        " +
+                 ",\n        ".join(map(
+                     lambda x: f"{x[0]}: {repr_node(x[1])}",
+                     enumerate(self.nodes))) +
+                 "\n    ]")
+        return f"Net(\n    {free_id},\n    {nodes}\n)"
+    def __repr__(self) -> str:
+        return self.show(label_map={})
     def root(self) -> Port:
         return Port.top(0)
     def get_node(self, p: Port | NodeId) -> Node:
