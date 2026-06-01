@@ -97,3 +97,10 @@ def run_tests(skip_not_implemented=True):
 def expect_eq(got, expected):
     assert got == expected, f"\nexpected:\n{pf(expected)},\nbut got:\n{pf(got)}"
 
+def reverse_dict[K, V](d: dict[K, V]) -> dict[V, K]:
+    r = {}
+    for k, v in d.items():
+        if v in r:
+            raise KeyError(f"Irreversible dict: Collision for {v}, dict: {d}")
+        r[v] = k
+    return r
