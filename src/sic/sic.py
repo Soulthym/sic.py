@@ -3,6 +3,7 @@ from functools import partial
 from pprint import pformat as pf
 from typing import cast
 from typing import Self
+from copy import deepcopy
 import re
 from .utils import *
 from . import compiler
@@ -242,9 +243,75 @@ class Net:
         eq, err = self.compare(other_cast)
         return eq
 
+def compiler_test_ctx() -> compiler.Context:
+    ctx = compiler.Context("")
+    ctx.label_map['A'] = 1
+    ctx.label_map['B'] = 2
+    ctx.label_map['C'] = 3
+    ctx.label_map['D'] = 4
+    return ctx
+
 @test
-def test_net_annihilation():
-    raise NotImplementedError("not implemented yet")
+def test_net_annihilate_bin():
+    """\
+    γ(b a) = γ(c d)
+    cases:
+      0: ∅
+      1: a <-> b
+      2:          c <-> d
+      3: a <-> b, c <-> d
+      4: a <-> d
+      5:          c <-> b
+      6: a <-> d, c <-> b
+      7: a <-> c
+      8:          b <-> d
+      9: a <-> c, b <-> d
+    """
+    cases = [
+        # 0: ∅
+        ("γ(εB εA) = γ(εC εD)", "εB = εC, εA = εD"),
+        # 1: a <-> b
+        ("γ(ab ab) = γ(εC εD)", "ab = εC, ab = εD"),
+        # 2:          c <-> d
+        ("γ(εB εA) = γ(cd cd)", "εB = cd, εA = cd"),
+        # 3: a <-> b, c <-> d
+        ("γ(ab ab) = γ(cd cd)", "ab = cd, ab = cd"),
+        # 4: a <-> d
+        ("γ(εB ad) = γ(εC ad)", "εB = εC, ad = ad"),
+        # 5:          c <-> b
+        ("γ(cb εA) = γ(cb εD)", "cb = cb, εA = εD"),
+        # 6: a <-> d, c <-> b
+        ("γ(cb ad) = γ(cb ad)", "cb = cb, ad = ad"),
+        # 7: a <-> c
+        ("γ(εB ac) = γ(ac εD)", "εB = ac, ac = εD"),
+        # 8:          b <-> d
+        ("γ(bd εA) = γ(εC bd)", "bd = εC, εA = bd"),
+        # 9: a <-> c, b <-> d
+        ("γ(bd ac) = γ(ac bd)", "bd = ac, ac = bd"),
+    ]
+    ctx = compiler_test_ctx()
+    label_map = reverse_dict(ctx.label_map)
+    for i, (before, expect) in enumerate(cases):
+        print(f"{i}:")
+        print("before:", before)
+        before_net = compiler.Compiler(
+            before, ctx=deepcopy(ctx)).compile()
+        print(before_net.show(label_map=label_map))
+
+        print("expect:", expect)
+        expect_net = compiler.Compiler(
+            expect, ctx=deepcopy(ctx)).compile()
+        print(expect_net.show(label_map=label_map))
+
+        print("result:")
+        lhs = Port.top(1)
+        rhs = Port.top(2)
+        result_net = before_net
+        result_net.annihilate_bin(lhs, rhs)
+        print(result_net.show(label_map=label_map))
+        res, err = result_net.compare(expect_net)
+        if not res:
+            raise AssertionError(err)
 
 @test
 def test_net_distribution():
