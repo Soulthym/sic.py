@@ -79,19 +79,23 @@ def test(f):
 
 def run_tests(skip_not_implemented=True):
     for f in _tests:
-        name = f.__name__
-        print(f"Running: {name}...")
+        name = f.__qualname__
+        print(f"running: {name}...")
+        indent()
         try:
             f()
             print("ok")
         except NotImplementedError as e:
             if not skip_not_implemented:
+                print(f"failed: {name}: not implemented")
                 raise e
-            print(f"skipped: {e!r}")
+            print(f"skipped: {name}: {e!r}")
             # exit(1)
         except Exception as e:
-            print(f"failed:\n{e!r}")
+            print(f"failed: {name}: {e!r}")
             raise e
+        finally:
+            dedent()
     print(f"All tests passed!")
 
 def expect_eq(got, expected):
