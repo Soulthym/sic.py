@@ -210,13 +210,19 @@ class Net:
         raise NotImplementedError("not implemented yet")
     def whnf(self):
         raise NotImplementedError("not implemented yet")
-    def compare(self, other: Self) -> tuple[bool, str]:
+    def compare(
+        self,
+        other: Self,
+        at: list[tuple[Port, Port]] | None = None,
+        label_map: dict[compiler.LabelId, compiler.LabelName] | None = None,
+    ) -> tuple[bool, str]:
         l_net = self
         r_net = other
         map_l_r: dict[Port, Port] = {}
         map_r_l: dict[Port, Port] = {}
-        l = r_net.root()
-        r = r_net.root()
+        if at is None:
+            at = (l_net.root(), r_net.root())
+        l, r = at
         map_l_r[l] = r
         map_r_l[r] = l
         stack: list[tuple[Port, Port]] = [(l, r)]
@@ -233,12 +239,12 @@ class Net:
                     f"right -> left: {pf(map_r_l)}")
             map_l_r[l] = r
             map_r_l[r] = l
-            if l.port_id != r.port_id:
-                return False, f"mismatched port ids: {l!r} <-> {r!r}"
             l_node = self.get_node(l)
             r_node = other.get_node(r)
+            if l.port_id != r.port_id:
+                return False, f"mismatched port ids: {l!r} <-> {r!r} in\n  left node: {l.node_id}: {l_node.show(label_map=label_map)},\n  right node: {r.node_id}: {r_node.show(label_map=label_map)}"
             if l_node.info != r_node.info:
-                return False, f"mismatched node info: {l_node.info!r} <-> {r_node.info!r}"
+                return False, f"mismatched node info: {l_node.info!r} <-> {r_node.info!r} in\n  left node: {l.node_id}: {l_node.show(label_map=label_map)},\n  right node: {r.node_id}: {r_node.show(label_map=label_map)}"
             stack.append((l_node.top, r_node.top))
             # same as r_node.info since l_node.info == r_node.info
             is_binary = l_node.info.tag.arity
