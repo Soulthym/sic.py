@@ -324,34 +324,56 @@ def test_net_annihilate_bin():
       8:          b <-> d
       9: a <-> c, b <-> d
     """
+    suffix_inp = "a = εA, b = εB, c = εC, d = εD, "
+    prefix_out = "φ = l, φ = r, "
     cases = [
         # 0: ∅
-        ("γ(εB εA) = γ(εC εD)", "εB = εC, εA = εD"),
+        ("γ(b   a) = γ(c   d)" + suffix_inp,
+         prefix_out + "εB = εC, εA = εD"),
         # 1: a <-> b
-        ("γ(ab ab) = γ(εC εD)", "ab = εC, ab = εD"),
+        ("γ(ab ab) = γ(c   d)" + suffix_inp,
+         prefix_out + "ab = εC, ab = εD"),
         # 2:          c <-> d
-        ("γ(εB εA) = γ(cd cd)", "εB = cd, εA = cd"),
+        ("γ(b   a) = γ(cd cd)" + suffix_inp,
+         prefix_out + "εB = cd, εA = cd"),
         # 3: a <-> b, c <-> d
-        ("γ(ab ab) = γ(cd cd)", "ab = cd, ab = cd"),
+        ("γ(ab ab) = γ(cd cd)" + suffix_inp,
+         prefix_out + "ab = cd, ab = cd"),
         # 4: a <-> d
-        ("γ(εB ad) = γ(εC ad)", "εB = εC, ad = ad"),
+        ("γ(b  ad) = γ(c  ad)" + suffix_inp,
+         prefix_out + "εB = εC, ad = ad"),
         # 5:          c <-> b
-        ("γ(cb εA) = γ(cb εD)", "cb = cb, εA = εD"),
+        ("γ(cb  a) = γ(cb  d)" + suffix_inp,
+         prefix_out + "cb = cb, εA = εD"),
         # 6: a <-> d, c <-> b
-        ("γ(cb ad) = γ(cb ad)", "cb = cb, ad = ad"),
+        ("γ(cb ad) = γ(cb ad)" + suffix_inp,
+         prefix_out + "cb = cb, ad = ad"),
         # 7: a <-> c
-        ("γ(εB ac) = γ(ac εD)", "εB = ac, ac = εD"),
+        ("γ(b  ac) = γ(ac  d)" + suffix_inp,
+         prefix_out + "εB = ac, ac = εD"),
         # 8:          b <-> d
-        ("γ(bd εA) = γ(εC bd)", "bd = εC, εA = bd"),
+        ("γ(bd  a) = γ(c  bd)" + suffix_inp,
+         prefix_out + "bd = εC, εA = bd"),
         # 9: a <-> c, b <-> d
-        ("γ(bd ac) = γ(ac bd)", "bd = ac, ac = bd"),
+        ("γ(bd ac) = γ(ac bd)" + suffix_inp,
+         prefix_out + "bd = ac, ac = bd"),
     ]
     ctx = compiler_test_ctx()
     label_map = reverse_dict(ctx.label_map)
+    print("testing annihilate_bin:")
+    indent()
     lhs = Port.top(1)
     rhs = Port.top(2)
+    # lhs is upside down, order is left -> right,
+    # so a and b are swapped
+    b = Port.lhs(1)
+    a = Port.rhs(1)
+    c = Port.lhs(2)
+    d = Port.rhs(2)
+    ats = [(v, v) for v in [lhs, rhs, a, b, c, d]]
     for i, (before, expect) in enumerate(cases):
-        print(f"{i}:")
+        print(f"case {i}:")
+        indent()
         print("before:", before)
         before_net = compiler.Compiler(
             before, ctx=deepcopy(ctx)).compile()
@@ -366,9 +388,13 @@ def test_net_annihilate_bin():
         result_net = before_net
         result_net.annihilate_bin(lhs, rhs)
         print(result_net.show(label_map=label_map))
-        res, err = result_net.compare(expect_net)
-        if not res:
-            raise AssertionError(err)
+        for at in ats:
+            res, err = result_net.compare(expect_net, at=at)
+            if not res:
+                dedent()
+                raise AssertionError(err)
+        dedent()
+    dedent()
 
 @test
 def test_net_distribution():
