@@ -283,6 +283,8 @@ def test_net_annihilate_nil():
     ctx = compiler_test_ctx()
     label_map = reverse_dict(ctx.label_map)
     print("testing annihilate_nil:")
+    lhs = Port.top(1)
+    rhs = Port.top(2)
     indent()
     for i, (before, expect) in enumerate(cases):
         print(f"{i}:")
@@ -297,8 +299,6 @@ def test_net_annihilate_nil():
         print(expect_net.show(label_map=label_map))
 
         print("result:")
-        lhs = Port.top(1)
-        rhs = Port.top(2)
         result_net = before_net
         result_net.annihilate_nil(lhs, rhs)
         print(result_net.show(label_map=label_map))
@@ -348,6 +348,8 @@ def test_net_annihilate_bin():
     ]
     ctx = compiler_test_ctx()
     label_map = reverse_dict(ctx.label_map)
+    lhs = Port.top(1)
+    rhs = Port.top(2)
     for i, (before, expect) in enumerate(cases):
         print(f"{i}:")
         print("before:", before)
@@ -361,8 +363,6 @@ def test_net_annihilate_bin():
         print(expect_net.show(label_map=label_map))
 
         print("result:")
-        lhs = Port.top(1)
-        rhs = Port.top(2)
         result_net = before_net
         result_net.annihilate_bin(lhs, rhs)
         print(result_net.show(label_map=label_map))
