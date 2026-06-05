@@ -196,9 +196,9 @@ class Net:
     def io(self, a: Port, b: Port):
         raise NotImplementedError("not implemented yet")
     def annihilate_nil(self, a: Port, b: Port):
-        info_a = self.get_info(a)
-        info_b = self.get_info(b)
-        if info_a.tag == PHI or info_b.tag == PHI:
+        a_info = self.get_info(a)
+        b_info = self.get_info(b)
+        if a_info.tag == PHI or b_info.tag == PHI:
             self.io(a, b)
         self.free(a.node_id)
         self.free(b.node_id)
