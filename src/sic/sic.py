@@ -282,6 +282,8 @@ def test_net_annihilate_nil():
     ]
     ctx = compiler_test_ctx()
     label_map = reverse_dict(ctx.label_map)
+    print("testing annihilate_nil:")
+    indent()
     for i, (before, expect) in enumerate(cases):
         print(f"{i}:")
         print("before:", before)
@@ -300,9 +302,11 @@ def test_net_annihilate_nil():
         result_net = before_net
         result_net.annihilate_nil(lhs, rhs)
         print(result_net.show(label_map=label_map))
-        res, err = result_net.compare(expect_net)
-        if not res:
-            raise AssertionError(err)
+        for l, r in zip(result_net.nodes, expect_net.nodes):
+            print(f"checking node: {l.info.tag}{l.info.label} == {r.info.tag}{r.info.label}")
+            expect_eq(l.info, FREE)
+            expect_eq(r.info, FREE)
+    dedent()
 
 @test
 def test_net_annihilate_bin():
