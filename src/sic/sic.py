@@ -69,6 +69,8 @@ class Info:
     def __repr__(self) -> str:
         return self.show(label_map={})
 
+FREE = Info.phi() # a dummy info for free nodes
+
 type NodeId = int
 type PortId = int
 
