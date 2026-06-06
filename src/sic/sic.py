@@ -203,7 +203,34 @@ class Net:
         self.free(a.node_id)
         self.free(b.node_id)
     def annihilate_bin(self, a: Port, b: Port):
+        print(f"{b=}")
+        print(f"{a=}")
+        a_nid = a.node_id
+        b_nid = b.node_id
+        print(f"{a_nid=}")
+        print(f"{b_nid=}")
+        a_lhs = Port.lhs(a.node_id)
+        a_rhs = Port.rhs(a.node_id)
+        b_lhs = Port.lhs(b.node_id)
+        b_rhs = Port.rhs(b.node_id)
+        a_lhs_rev = self.get_port(a_lhs)
+        a_rhs_rev = self.get_port(a_rhs)
+        b_lhs_rev = self.get_port(b_lhs)
+        b_rhs_rev = self.get_port(b_rhs)
+        inputs  = [a_lhs,     a_rhs,     b_lhs,     b_rhs]
+        outputs = [a_lhs_rev, a_rhs_rev, b_lhs_rev, b_rhs_rev]
+        print(f"{inputs=}")
+        print(f"{outputs=}")
+        self_connects = [4, 4, 4, 4]
+        for j, out in enumerate(outputs):
+            if out.node_id == a_nid or out.node_id == b_nid:
+                for i, inp in enumerate(inputs):
+                    if inp == out:
+                        self_connects[i] = j
+                        break
+        print(f"{self_connects=}")
         raise NotImplementedError("not implemented yet")
+
     def distribute(self, a: Port, b: Port):
         raise NotImplementedError("not implemented yet")
     def commute(self, a: Port, b: Port):
