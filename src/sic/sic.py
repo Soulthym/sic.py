@@ -281,32 +281,20 @@ def test_net_annihilate_nil():
         # ("φA = φA", ""),
     ]
     ctx = compiler_test_ctx()
-    label_map = reverse_dict(ctx.label_map)
-    print("testing annihilate_nil:")
     lhs = Port.top(1)
     rhs = Port.top(2)
-    indent()
     for i, (before, expect) in enumerate(cases):
-        print(f"{i}:")
-        print("before:", before)
         before_net = compiler.Compiler(
             before, ctx=deepcopy(ctx)).compile()
-        print(before_net.show(label_map=label_map))
 
-        print("expect:", expect)
         expect_net = compiler.Compiler(
             expect, ctx=deepcopy(ctx)).compile()
-        print(expect_net.show(label_map=label_map))
 
-        print("result:")
         result_net = before_net
         result_net.annihilate_nil(lhs, rhs)
-        print(result_net.show(label_map=label_map))
         for l, r in zip(result_net.nodes, expect_net.nodes):
-            print(f"checking node: {l.info.tag}{l.info.label} == {r.info.tag}{r.info.label}")
             expect_eq(l.info, FREE)
             expect_eq(r.info, FREE)
-    dedent()
 
 @test
 def test_net_annihilate_bin():
