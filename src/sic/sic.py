@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+from itertools import count
+from itertools import product
 from functools import partial
 from pprint import pformat as pf
 from typing import cast
@@ -140,6 +142,15 @@ class Node:
     def __repr__(self) -> str:
         return self.show(label_map={})
 
+def iter_names_chars():
+    alphas = "abcdefghijklmnopqrstuvwxyz"
+    for repeat in count(1):
+        yield from product(alphas, repeat=repeat)
+
+def iter_names():
+    for chars in iter_names_chars():
+        yield "".join(chars)
+
 @dataclass(init=False)
 class Net:
     free_id: NodeId
@@ -161,6 +172,33 @@ class Net:
         return f"Net(\n    {free_id},\n    {nodes}\n)"
     def __repr__(self) -> str:
         return self.show(label_map={})
+    def decompile(
+        self,
+        label_map: dict[compiler.LabelId, compiler.LabelName] | None = None,
+        join: str = "\n",
+    ) -> str:
+        if label_map is None:
+            label_map = {}
+        names = iter_names()
+        ports: dict[Port, str] = {self.root(): "main"}
+        def display_port(port):
+            if port in ports:
+                return ports[port]
+            name = next(names)
+            ports[self.get_port(port)] = name
+            return name
+        res = []
+        for idx, node in enumerate(self.nodes[1:], start=1):
+            name = display_port(Port.top(idx))
+            info = node.info
+            if info.tag.arity == AR0:
+                aux = ""
+            else:
+                lhs = display_port(Port.lhs(idx))
+                rhs = display_port(Port.rhs(idx))
+                aux = f"({lhs} {rhs})"
+            res.append(f"{name} = {info.show(label_map=label_map)}{aux}")
+        return join.join(res)
     def root(self) -> Port:
         return Port.top(0)
     def get_node(self, p: Port | NodeId) -> Node:
@@ -315,17 +353,21 @@ def test_net_annihilate_nil():
         # ("φA = φA", ""),
     ]
     ctx = compiler_test_ctx()
+    label_map = reverse_dict(ctx.label_map)
     lhs = Port.top(1)
     rhs = Port.top(2)
     for i, (before, expect) in enumerate(cases):
         before_net = compiler.Compiler(
             before, ctx=deepcopy(ctx)).compile()
+        print(before_net.decompile(label_map=label_map))
 
         expect_net = compiler.Compiler(
             expect, ctx=deepcopy(ctx)).compile()
+        print(expect_net.decompile(label_map=label_map))
 
         result_net = before_net
         result_net.annihilate_nil(lhs, rhs)
+        print(result_net.decompile(label_map=label_map))
         for l, r in zip(result_net.nodes, expect_net.nodes):
             expect_eq(l.info, FREE)
             expect_eq(r.info, FREE)
@@ -416,16 +458,19 @@ def test_net_annihilate_bin():
         before_net = compiler.Compiler(
             before, ctx=deepcopy(ctx)).compile()
         print(before_net.show(label_map=label_map))
+        print(before_net.decompile(label_map=label_map))
 
         print("expect:", expect)
         expect_net = compiler.Compiler(
             expect, ctx=deepcopy(ctx)).compile()
         print(expect_net.show(label_map=label_map))
+        print(expect_net.decompile(label_map=label_map))
 
         print("result:")
         result_net = before_net
         result_net.annihilate_bin(lhs, rhs)
         print(result_net.show(label_map=label_map))
+        print(result_net.decompile(label_map=label_map))
         for at in ats:
             res, err = result_net.compare(expect_net, at=at)
             if not res:
