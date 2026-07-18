@@ -482,12 +482,184 @@ def test_net_annihilate_bin():
     dedent()
 
 @test
-def test_net_distribution():
-    raise NotImplementedError("not implemented yet")
+def test_net_distribute():
+    """\
+    ε = γ(a b)
+    ----------
+    a = ε
+    b = ε
+
+    a b   a b
+    │ │   │ │
+    a_b   │ │
+    ╲γ╱   │ │
+     ·    │ │
+     │ => │ │
+     ε    ε ε
+
+    cases:
+      0: ø
+      1: a <-> b
+    """
+    inp_prefix = "a = εA, b = εB, "
+    inp = lambda x: inp_prefix + x
+    cases = [
+        # 0: ø
+        (inp("ε = γ(a   b)"), "a = εA, b = εB"),
+        # 1: a <-> b
+        (inp("ε = γ(ab ab)"), "ε = ε"),
+    ]
+    ctx = compiler_test_ctx()
+    label_map = reverse_dict(ctx.label_map)
+    print("testing annihilate_bin:")
+    indent()
+    lhs = Port.top(1)
+    rhs = Port.top(2)
+    # lhs is upside down, order is left -> right,
+    # so a and b are swapped
+    b = Port.lhs(1)
+    a = Port.rhs(1)
+    ats = [(v, v) for v in [lhs, rhs, a, b]]
+    for i, (before, expect) in enumerate(cases):
+        print(f"case {i}:")
+        indent()
+        print("before:", before)
+        before_net = compiler.Compiler(
+            before, ctx=deepcopy(ctx)).compile()
+        print(before_net.show(label_map=label_map))
+        print(before_net.decompile(label_map=label_map))
+
+        print("expect:", expect)
+        expect_net = compiler.Compiler(
+            expect, ctx=deepcopy(ctx)).compile()
+        print(expect_net.show(label_map=label_map))
+        print(expect_net.decompile(label_map=label_map))
+
+        print("result:")
+        result_net = before_net
+        result_net.annihilate_bin(lhs, rhs)
+        print(result_net.show(label_map=label_map))
+        print(result_net.decompile(label_map=label_map))
+        for at in ats:
+            res, err = result_net.compare(expect_net, at=at)
+            if not res:
+                dedent()
+                raise AssertionError(err)
+        dedent()
+    dedent()
 
 @test
-def test_net_commutation():
-    raise NotImplementedError("not implemented yet")
+def test_net_commute():
+    """\
+    γ(b a) = δ(c d)
+    ---------------
+    c = γ(eg fk)
+    a = δ(eg hi)
+    d = γ(hi jl)
+    b = δ(fk jl)
+
+    a b    a   b
+    │ │    │   │
+    a_b    a   b
+    ╲γ╱   ╱δ╲ ╱δ╲
+     ·    g¯h k¯l
+     │ => │  ╳  │
+     ·    e_f i_j
+    ╱δ╲   ╲γ╱ ╲γ╱
+    c¯d    c   d
+    │ │    │   │
+    c d    c   d
+
+    cases:
+      0: ø
+      1: a <-> b
+      2:          c <-> d
+      3: a <-> b, c <-> d
+      4: a <-> d
+      5:          c <-> b
+      6: a <-> d, c <-> b
+      7: a <-> c
+      8:          b <-> d
+      9: a <-> c, b <-> d
+    """
+    inp_suffix = ", a = εA, b = εB, c = εC, d = εD"
+    out_prefix = "c = γ(e f), a = δ(g h), "
+    auxcon_out = "e = g, f = k, i = h, j = l"
+    out_suffix = ", d = γ(i j), b = δ(k l), " + auxcon_out
+    inp = lambda x: inp_suffix + x
+    out = lambda x: out_prefix + x + out_suffix
+    cases = [
+        # 0: ø
+        (inp("γ(b   a) = δ(c   d)"),
+         out("a = εA, b = εB, c = εC, d = εD, ")),
+        # 1: a <-> b
+        (inp("γ(ab ab) = δ(c   d)"),
+         out("a = ab, b = ab, c = εC, d = εD, ")),
+        # 2:          c <-> d
+        (inp("γ(b   a) = δ(cd cd)"),
+         out("a = εA, b = εB, c = cd, d = cd, ")),
+        # 3: a <-> b, c <-> d
+        (inp("γ(ab ab) = δ(cd cd)"),
+         out("a = ab, b = ab, c = cd, d = cd, ")),
+        # 4: a <-> d
+        (inp("γ(b  ad) = δ(c  ad)"),
+         out("a = ad, b = εB, c = εC, d = ad, ")),
+        # 5:          c <-> b
+        (inp("γ(cb  a) = δ(cb  d)"),
+         out("a = εA, b = cb, c = cb, d = εD, ")),
+        # 6: a <-> d, c <-> b
+        (inp("γ(cb ad) = δ(cb ad)"),
+         out("a = ad, b = cb, c = cb, d = ad, ")),
+        # 7: a <-> c
+        (inp("γ(b  ac) = δ(ac  d)"),
+         out("a = ac, b = εB, c = ac, d = εD, ")),
+        # 8:          b <-> d
+        (inp("γ(bd  a) = δ(c  bd)"),
+         out("a = εA, b = bd, c = εC, d = bd, ")),
+        # 9: a <-> c, b <-> d
+        (inp("γ(bd ac) = δ(ac bd)"),
+         out("a = ac, b = bd, c = ac, d = bd, ")),
+    ]
+    ctx = compiler_test_ctx()
+    label_map = reverse_dict(ctx.label_map)
+    print("testing commute:")
+    indent()
+    lhs = Port.top(1)
+    rhs = Port.top(2)
+    # lhs is upside down, order is left -> right,
+    # so a and b are swapped
+    b = Port.lhs(1)
+    a = Port.rhs(1)
+    c = Port.lhs(2)
+    d = Port.rhs(2)
+    ats = [(v, v) for v in [lhs, rhs, a, b, c, d]]
+    for i, (before, expect) in enumerate(cases):
+        print(f"case {i}:")
+        indent()
+        print("before:", before)
+        before_net = compiler.Compiler(
+            before, ctx=deepcopy(ctx)).compile()
+        print(before_net.show(label_map=label_map))
+        print(before_net.decompile(label_map=label_map))
+
+        print("expect:", expect)
+        expect_net = compiler.Compiler(
+            expect, ctx=deepcopy(ctx)).compile()
+        print(expect_net.show(label_map=label_map))
+        print(expect_net.decompile(label_map=label_map))
+
+        print("result:")
+        result_net = before_net
+        result_net.annihilate_bin(lhs, rhs)
+        print(result_net.show(label_map=label_map))
+        print(result_net.decompile(label_map=label_map))
+        for at in ats:
+            res, err = result_net.compare(expect_net, at=at)
+            if not res:
+                dedent()
+                raise AssertionError(err)
+        dedent()
+    dedent()
 
 if __name__ == "__main__":
     run_tests(skip_not_implemented=False)
