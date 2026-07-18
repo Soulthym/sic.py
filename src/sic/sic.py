@@ -298,7 +298,14 @@ def compiler_test_ctx() -> compiler.Context:
 @test
 def test_net_annihilate_nil():
     """\
-    εA <-> εA
+    εA = εB
+    -------
+       ø
+
+    εA
+     │ => Ø
+    εB
+
     cases:
       0: ø
     """
@@ -327,6 +334,22 @@ def test_net_annihilate_nil():
 def test_net_annihilate_bin():
     """\
     γ(b a) = γ(c d)
+    ---------------
+    b = c
+    a = d
+
+    a b   a b
+    │ │   │ │
+    a_b   │ │
+    ╲γ╱   │ │
+     ·    ╰╮╯
+     │ => ╭╰╮
+     ·    │ │
+    ╱γ╲   │ │
+    c¯d   │ │
+    │ │   │ │
+    c d   c d
+
     cases:
       0: ø
       1: a <-> b
