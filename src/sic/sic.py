@@ -406,7 +406,7 @@ def test_net_annihilate_bin():
         for at in ats:
             res, err = result_net.compare(expect_net, at=at)
             if not res:
-                dedent()
+                # dedent(by=2)
                 raise AssertionError(err)
         dedent()
     dedent()

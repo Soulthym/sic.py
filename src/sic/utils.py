@@ -9,12 +9,12 @@ pf = partial(pformat, compact=True, width=1, sort_dicts=True)
 
 _print = print
 INDENT_LEVEL = 0
-def indent():
+def indent(by: int = 1):
     global INDENT_LEVEL
-    INDENT_LEVEL += 1
-def dedent():
+    INDENT_LEVEL += by
+def dedent(by: int = 1):
     global INDENT_LEVEL
-    INDENT_LEVEL -= 1
+    INDENT_LEVEL -= by
 def get_indent():
     global INDENT_LEVEL
     return INDENT_LEVEL
