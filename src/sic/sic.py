@@ -89,7 +89,7 @@ class Port:
         return cls(node_id, 3)
     def __repr__(self) -> str:
         if self.port_id == 0 and self.node_id == 0:
-            return "Ø"
+            return "ø"
         return f"{self.node_id}:{self.port_id}"
 
 unused = Port(0, 0) # a dummy port for uninitialized ports
@@ -300,10 +300,10 @@ def test_net_annihilate_nil():
     """\
     εA <-> εA
     cases:
-      0: ∅
+      0: ø
     """
     cases = [
-        # 0: ∅
+        # 0: ø
         ("εA = εA", ""),
         # ("φA = φA", ""),
     ]
@@ -328,7 +328,7 @@ def test_net_annihilate_bin():
     """\
     γ(b a) = γ(c d)
     cases:
-      0: ∅
+      0: ø
       1: a <-> b
       2:          c <-> d
       3: a <-> b, c <-> d
@@ -342,7 +342,7 @@ def test_net_annihilate_bin():
     suffix_inp = "a = εA, b = εB, c = εC, d = εD, "
     prefix_out = "φ = l, φ = r, "
     cases = [
-        # 0: ∅
+        # 0: ø
         ("γ(b   a) = γ(c   d)" + suffix_inp,
          prefix_out + "εB = εC, εA = εD"),
         # 1: a <-> b
