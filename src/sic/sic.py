@@ -404,39 +404,41 @@ def test_net_annihilate_bin():
       8:          b <-> d
       9: a <-> c, b <-> d
     """
-    suffix_inp = "a = εA, b = εB, c = εC, d = εD, "
-    prefix_out = "φ = l, φ = r, "
+    inp_suffix = ", a = εA, b = εB, c = εC, d = εD"
+    out_prefix = "φ = l, φ = r, "
+    inp = lambda x: x + inp_suffix
+    out = lambda x: out_prefix + x
     cases = [
         # 0: ø
-        ("γ(b   a) = γ(c   d)" + suffix_inp,
-         prefix_out + "εB = εC, εA = εD"),
+       (inp("γ(b   a) = γ(c   d)"),
+        out("εB = εC, εA = εD")),
         # 1: a <-> b
-        ("γ(ab ab) = γ(c   d)" + suffix_inp,
-         prefix_out + "ab = εC, ab = εD"),
+       (inp("γ(ab ab) = γ(c   d)"),
+        out("ab = εC, ab = εD")),
         # 2:          c <-> d
-        ("γ(b   a) = γ(cd cd)" + suffix_inp,
-         prefix_out + "εB = cd, εA = cd"),
+       (inp("γ(b   a) = γ(cd cd)"),
+        out("εB = cd, εA = cd")),
         # 3: a <-> b, c <-> d
-        ("γ(ab ab) = γ(cd cd)" + suffix_inp,
-         prefix_out + "ab = cd, ab = cd"),
+       (inp("γ(ab ab) = γ(cd cd)"),
+        out("ab = cd, ab = cd")),
         # 4: a <-> d
-        ("γ(b  ad) = γ(c  ad)" + suffix_inp,
-         prefix_out + "εB = εC, ad = ad"),
+       (inp("γ(b  ad) = γ(c  ad)"),
+        out("εB = εC, ad = ad")),
         # 5:          c <-> b
-        ("γ(cb  a) = γ(cb  d)" + suffix_inp,
-         prefix_out + "cb = cb, εA = εD"),
+       (inp("γ(cb  a) = γ(cb  d)"),
+        out("cb = cb, εA = εD")),
         # 6: a <-> d, c <-> b
-        ("γ(cb ad) = γ(cb ad)" + suffix_inp,
-         prefix_out + "cb = cb, ad = ad"),
+       (inp("γ(cb ad) = γ(cb ad)"),
+        out("cb = cb, ad = ad")),
         # 7: a <-> c
-        ("γ(b  ac) = γ(ac  d)" + suffix_inp,
-         prefix_out + "εB = ac, ac = εD"),
+       (inp("γ(b  ac) = γ(ac  d)"),
+        out("εB = ac, ac = εD")),
         # 8:          b <-> d
-        ("γ(bd  a) = γ(c  bd)" + suffix_inp,
-         prefix_out + "bd = εC, εA = bd"),
+       (inp("γ(bd  a) = γ(c  bd)"),
+        out("bd = εC, εA = bd")),
         # 9: a <-> c, b <-> d
-        ("γ(bd ac) = γ(ac bd)" + suffix_inp,
-         prefix_out + "bd = ac, ac = bd"),
+       (inp("γ(bd ac) = γ(ac bd)"),
+        out("bd = ac, ac = bd")),
     ]
     ctx = compiler_test_ctx()
     label_map = reverse_dict(ctx.label_map)
